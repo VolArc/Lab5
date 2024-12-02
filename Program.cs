@@ -72,7 +72,7 @@ internal static class Program {
                     if (array.Length == 0) {
                         isRunning = false;
                         Console.Clear();
-                        Console.WriteLine("Вы массив удалили.");
+                        Console.WriteLine("Вы массив удалили. Нажмите любую кнопку, чтобы отформатировать диск.");
                         Console.ReadKey();
                     }
                     break;
@@ -87,7 +87,7 @@ internal static class Program {
     }
 
     private static void WorkWithString() {
-        const string keywordsString = "abstract\nas\nbase\nbool\nbreak\nbyte\ncase\ncatch\nchar\nchecked\nclass\nconst\ncontinue\ndecimal\ndefault\ndelegate\ndo\ndouble\nelse\nenum\n\nevent\nexplicit\nextern\nfalse\nfinally\nfixed\nfloat\nfor\nforeach\ngoto\nif\nimplicit\nin\nint\ninterface\ninternal\nis\nlock\nlong\nnamespace\nnew\nnull\nobject\noperator\nout\noverride\nparams\nprivate\nprotected\npublic\nreadonly\nref\nreturn\nsbyte\nsealed\nshort\nsizeof\nstackalloc\nstatic\nstring\nstruct\nswitch\nthis\nthrow\ntrue\ntry\ntypeof\nuint\nulong\nunchecked\nunsafe\nushort\nusing\nvirtual\nvoid\nvolatile\nwhile\n\n\nadd\nand\nalias\nascending\nargs\nasync\nawait\nby\ndescending\ndynamic\nequals\nfrom\nget\nglobal\ngroup\ninit\ninto\njoin\nlet\nmanaged\nnameof\nnint\nnot\nnotnull\nnuint\non\norderby\npartial\npartial\nrecord\nremove\nselect\nset\nunmanaged\nunmanaged\nvalue\nvar\nwhen\nwhere\nwhere\nwith\nyield";
+        const string keywordsString = "abstract\nas\nbase\nbool\nbreak\nbyte\ncase\ncatch\nchar\nchecked\nclass\nconst\ncontinue\ndecimal\ndefault\ndelegate\ndo\ndouble\nelse\nenum\n\nevent\nexplicit\nextern\nfalse\nfinally\nfixed\nfloat\nfor\nforeach\ngoto\nif\nimplicit\nin\nint\ninterface\ninternal\nis\nlock\nlong\nnamespace\nnew\nnull\nobject\noperator\nout\noverride\nparams\nprivate\nprotected\npublic\nreadonly\nref\nreturn\nsbyte\nsealed\nshort\nsizeof\nstackalloc\nstatic\nstring\nstruct\nswitch\nthis\nthrow\ntrue\ntry\ntypeof\nuint\nulong\nunchecked\nunsafe\nushort\nusing\nvirtual\nvoid\nvolatile\nwhile\nadd\nand\nalias\nascending\nargs\nasync\nawait\nby\ndescending\ndynamic\nequals\nfrom\nget\nglobal\ngroup\ninit\ninto\njoin\nlet\nmanaged\nnameof\nnint\nnot\nnotnull\nnuint\non\norderby\npartial\npartial\nrecord\nremove\nselect\nset\nunmanaged\nunmanaged\nvalue\nvar\nwhen\nwhere\nwhere\nwith\nyield";
         const string punctuation = ".,:;!?";
         var keyWords = keywordsString.Split('\n');
         var userString = "";
