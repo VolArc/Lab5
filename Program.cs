@@ -1,4 +1,6 @@
-﻿namespace Lab5;
+﻿using System.Text.RegularExpressions;
+
+namespace Lab5;
 
 internal static class Program {
     private static void Main() {
@@ -26,8 +28,8 @@ internal static class Program {
     }
 
     private static void WorkWith2DArray() {
-        const int limit = 625;
-        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, 32);
+        const int limit = 500;
+        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, 20);
         var columnsNumber = InputWithLimit("Введите количество столбцов: ", 1, limit / rowsNumber);
         var array = Fill2DArray(rowsNumber, columnsNumber,
             Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1);
@@ -87,57 +89,59 @@ internal static class Program {
     }
 
     private static void WorkWithString() {
-        const string keywordsString = "abstract\nas\nbase\nbool\nbreak\nbyte\ncase\ncatch\nchar\nchecked\nclass\nconst\ncontinue\ndecimal\ndefault\ndelegate\ndo\ndouble\nelse\nenum\n\nevent\nexplicit\nextern\nfalse\nfinally\nfixed\nfloat\nfor\nforeach\ngoto\nif\nimplicit\nin\nint\ninterface\ninternal\nis\nlock\nlong\nnamespace\nnew\nnull\nobject\noperator\nout\noverride\nparams\nprivate\nprotected\npublic\nreadonly\nref\nreturn\nsbyte\nsealed\nshort\nsizeof\nstackalloc\nstatic\nstring\nstruct\nswitch\nthis\nthrow\ntrue\ntry\ntypeof\nuint\nulong\nunchecked\nunsafe\nushort\nusing\nvirtual\nvoid\nvolatile\nwhile\nadd\nand\nalias\nascending\nargs\nasync\nawait\nby\ndescending\ndynamic\nequals\nfrom\nget\nglobal\ngroup\ninit\ninto\njoin\nlet\nmanaged\nnameof\nnint\nnot\nnotnull\nnuint\non\norderby\npartial\npartial\nrecord\nremove\nselect\nset\nunmanaged\nunmanaged\nvalue\nvar\nwhen\nwhere\nwhere\nwith\nyield";
-        const string punctuation = ".,:;!?";
+        const string keywordsString = "abstract\nas\nbase\nbool\nbreak\nbyte\ncase\ncatch\nchar\nchecked\nclass\nconst\ncontinue\ndecimal\ndefault\ndelegate\ndo\ndouble\nelse\nenum\nevent\nexplicit\nextern\nfalse\nfinally\nfixed\nfloat\nfor\nforeach\ngoto\nif\nimplicit\nin\nint\ninterface\ninternal\nis\nlock\nlong\nnamespace\nnew\nnull\nobject\noperator\nout\noverride\nparams\nprivate\nprotected\npublic\nreadonly\nref\nreturn\nsbyte\nsealed\nshort\nsizeof\nstackalloc\nstatic\nstring\nstruct\nswitch\nthis\nthrow\ntrue\ntry\ntypeof\nuint\nulong\nunchecked\nunsafe\nushort\nusing\nvirtual\nvoid\nvolatile\nwhile\nadd\nand\nalias\nascending\nargs\nasync\nawait\nby\ndescending\ndynamic\nequals\nfrom\nget\nglobal\ngroup\ninit\ninto\njoin\nlet\nmanaged\nnameof\nnint\nnot\nnotnull\nnuint\non\norderby\npartial\npartial\nrecord\nremove\nselect\nset\nunmanaged\nunmanaged\nvalue\nvar\nwhen\nwhere\nwhere\nwith\nyield";
+        var pattern = @"\b(" + keywordsString.Replace('\n', '|') + @")\b";
         var keyWords = keywordsString.Split('\n');
-        var userString = "";
-        do {
-            Console.WriteLine("Введите строку:");
-            Console.CursorVisible = true;
-            userString = Console.ReadLine();
-            while (userString.Contains("  ")) userString = userString.Replace("  ", " ");
-            Console.CursorVisible = false;
-        } while (userString is "" or " ");
+        var userInput = InputString("Введите строку для поиска ключевых слов: ");
+        List<int> sharpPositions = [];
+        
+        for (var i = 0; i < userInput.Length; i++) {
+            if (userInput[i] == '#') sharpPositions.Add(i);
+        }
 
-        userString = punctuation.Aggregate(userString, (current, mark) => current.Replace(mark.ToString(), " " + mark));
-        var splittedString = userString.Split(' ');
-        List<string> foundWords = [];
+        var matches = Regex.Matches(userInput, pattern);
+        var foundKeywords = new Dictionary<string, int>();
+        
+        foreach (var keyword in keyWords) foundKeywords[keyword] = 0;
+        
+        foreach (Match match in matches) {
+            var foundKeyword = match.Value;
+            if (foundKeywords.ContainsKey(foundKeyword)) foundKeywords[foundKeyword]++;
+        }
+        
+        const string punctuation = "`~!@$%^&*()_+-=[]{}\\|/?><,.#;:'\"";
+        userInput = punctuation.Aggregate(userInput, (current, mark) => current.Replace(mark.ToString(), " " + mark + " "));
+        var splittedString = userInput.Split(' ');
         var highlightsString = "";
         foreach (var word in splittedString) {
-            if (keyWords.Contains(word)) {
-                foundWords.Add(word);
-                highlightsString += $"#{word}# ";
-            }
+            if (keyWords.Contains(word)) highlightsString += $"#{word}# ";
             else highlightsString += $"{word} ";
         }
-        highlightsString = punctuation.Aggregate(highlightsString, (current, mark) => current.Replace(" " + mark, mark.ToString()));
+        highlightsString = punctuation.Aggregate(highlightsString, (current, mark) => current.Replace(" " + mark + " ", mark.ToString()));
         Console.Clear();
-        foundWords.Sort();
-        foundWords.Add(" ");
-        var count = 1;
-        for (var i = 1; i < foundWords.Count; i++) {
-            if (foundWords[i] == foundWords[i - 1]) count++;
-            else {
-                Console.WriteLine($"{foundWords[i - 1]} — {count}");
-                count = 1;
-            }
-        }
         var highlight = false;
+        var position = 0;
         foreach (var symbol in highlightsString) {
-            if (symbol == '#') highlight = !highlight;
-            else if (highlight) {
+            if (symbol == '#' && !sharpPositions.Contains(position)) {
+                highlight = !highlight;
+                position--;
+            }
+            else if (highlight && symbol != '#') {
                 Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.ForegroundColor = ConsoleColor.Black;
                 Console.Write(symbol);
                 Console.ResetColor();
             }
             else Console.Write(symbol);
+            position++;
         }
         Console.ResetColor();
         Console.WriteLine();
+        foreach (var word in foundKeywords.Where(word => word.Value != 0)) Console.WriteLine($"{word.Key} — {word.Value}");
         Console.ReadKey();
     }
-    
+
+    #region Inputs
     private static int InputInt(string message) {
         int number;
         Console.Write(message);
@@ -161,6 +165,25 @@ internal static class Program {
 
         return number;
     }
+    
+    private static string InputString(string message) {
+        string input;
+        Console.WriteLine(message);
+        Console.CursorVisible = true;
+
+        do {
+            input = Console.ReadLine();
+            if (input is "" or " ") Console.Write("Ошибка!!! Введите не пустую строку.\n");
+            while (input.Contains("  ")) input = input.Replace("  ", " ");
+        } while (input is "" or " ");
+
+        Console.CursorVisible = false;
+
+        return input;
+    }
+    #endregion
+    
+    
     
      private static int Menu(string[] options, int option = 0, string highlightedMessage = "", string arrayMessage = "") {
         var work = true;
@@ -218,15 +241,24 @@ internal static class Program {
 
             var key = Console.ReadKey();
             ConsoleKey[] keys = [ConsoleKey.D0, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5, ConsoleKey.D6, ConsoleKey.D7, ConsoleKey.D8, ConsoleKey.D9];
-            if (key.Key == ConsoleKey.UpArrow) selectedOption = (selectedOption - 1 + length) % length;
-            else if (key.Key == ConsoleKey.DownArrow) selectedOption = (selectedOption + 1) % length;
-            else if (key.Key == ConsoleKey.Enter) work = false;
-            else {
-                for (var i = 0; i < (length < keys.Length ? length : keys.Length); i++) {
-                    if (key.Key == keys[i]) {
+            switch (key.Key) {
+                case ConsoleKey.UpArrow:
+                    selectedOption = (selectedOption - 1 + length) % length;
+                    break;
+                case ConsoleKey.DownArrow:
+                    selectedOption = (selectedOption + 1) % length;
+                    break;
+                case ConsoleKey.Enter:
+                    work = false;
+                    break;
+                default: {
+                    for (var i = 0; i < (length < keys.Length ? length : keys.Length); i++) {
+                        if (key.Key != keys[i]) continue;
                         selectedOption = i;
                         break;
                     }
+
+                    break;
                 }
             }
             Console.ResetColor();
@@ -245,7 +277,7 @@ internal static class Program {
 
         while (true) {
             Console.Clear();
-            Console.WriteLine("Выберите строку:");
+            Console.WriteLine("Выберите строки (Чтобы удалить выбранные строки нажмите Y, чтобы вернуться в меню нажмите N):");
             for (var i = 0; i < length; i++) {
                 Console.ResetColor();
                 if (i == row) {
@@ -278,7 +310,7 @@ internal static class Program {
             }
 
             var key = Console.ReadKey();
-            ConsoleKey[] keys = [ConsoleKey.D0, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5, ConsoleKey.D6, ConsoleKey.D7, ConsoleKey.D8, ConsoleKey.D9];
+            ConsoleKey[] keys = [ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5, ConsoleKey.D6, ConsoleKey.D7, ConsoleKey.D8, ConsoleKey.D9, ConsoleKey.D0];
             switch (key.Key) {
                 case ConsoleKey.UpArrow:
                     row = (row - 1 + length) % length;
@@ -294,9 +326,11 @@ internal static class Program {
                     if (row1 > row2) (row1, row2) = (row2, row1);
                     break;
                 }
-                case ConsoleKey.N when (row1 != -1 || row2 != -1):
+                case ConsoleKey.Y when row1 != -1 || row2 != -1:
                     return row1 != -1 && row2 != -1 ? Tuple.Create(row1, row2) :
                         row2 == -1 ? Tuple.Create(row1, row1) : Tuple.Create(row2, row2);
+                case ConsoleKey.N:
+                    return Tuple.Create(-1, -1);
                 default: {
                     for (var i = 0; i < (length < keys.Length ? length : keys.Length); i++) {
                         if (key.Key != keys[i]) continue;
@@ -310,8 +344,6 @@ internal static class Program {
             Console.ResetColor();
             Console.Clear();
         }
-
-        return Tuple.Create(0, 0);
     }
      
     private static int[,] Fill2DArray(int rowsNumber, int columnsNumber, bool randomFilling) {
@@ -399,7 +431,7 @@ internal static class Program {
         var arrayString = "";
         for (var i = 0; i < array.GetLength(0); i++) {
             for (var j = 0; j < array.GetLength(1); j++)
-                arrayString += $"{array[i, j]}\t";
+                arrayString += $"{array[i, j]} ";
             arrayString += '\n';
         }
 
@@ -427,9 +459,10 @@ internal static class Program {
         }
         else (border1, border2) = ChooseRows(array);
         if (border1 > border2) (border1, border2) = (border2, border1);
+        if (border1 == -1 || border2 == -1) return array;
         var newArray = new int[array.Length - (border2 - border1 + 1)][];
-
         var j = 0;
+        
         for (var i = 0; i < array.Length; i++) {
             if (i == border1) i = border2;
             else {
