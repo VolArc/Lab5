@@ -3,18 +3,25 @@
 namespace Lab5;
 
 internal static class Program {
+    private const int TwoDLimit = 500;
+    private const int RowsLimit = 20;
+    private const int ColumnsLimit = 50;
     private static void Main() {
         Console.CursorVisible = false;
         var isRunning = true;
         var option = 0;
+        int[,] twoDArray = null;
+        int[][] jaggedArray = null;
         while (isRunning) {
             option = Menu(["Выход", "Работа с двумерным массивом", "Работа с рванным массивом", "Работа со строкой"], option);
             switch (option) {
                 case 1:
-                    WorkWith2DArray();
+                    twoDArray ??= Create2DArray();
+                    WorkWith2DArray(ref twoDArray);
                     break;
                 case 2:
-                    WorkWithJaggedArray();
+                    jaggedArray ??= CreateJaggedArray();
+                    WorkWithJaggedArray(ref jaggedArray);
                     break;
                 case 3:
                     WorkWithString();
@@ -26,23 +33,20 @@ internal static class Program {
         }
         Console.CursorVisible = true;
     }
-
-    private static void WorkWith2DArray() {
-        const int limit = 500;
-        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, 20);
-        var columnsNumber = InputWithLimit("Введите количество столбцов: ", 1, limit / rowsNumber);
-        var array = Fill2DArray(rowsNumber, columnsNumber,
-            Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1);
-        var arrayString = Print2DArray(array);
+    
+    private static void WorkWith2DArray(ref int [,] array) {
+        var rowsNumber = array.GetLength(0);
+        var columnsNumber = array.GetLength(1);
         var option = 0;
         var isRunning = true;
         var showArray = false;
         var highlightedMessage = "";
+        var arrayString = Print2DArray(array);
         while (isRunning) {
-            option = Menu(["Назад", "Добавить столбец в начало матрицы", showArray ? "Скрыть матрицу" : "Показать матрицу"], option, highlightedMessage, showArray ? arrayString : "");
+            option = Menu(["Назад", "Добавить столбец в начало матрицы", showArray ? "Скрыть матрицу" : "Показать матрицу", "Пересоздать матрицу"], option, highlightedMessage, showArray ? arrayString : "");
             switch (option) {
                 case 1:
-                    if (limit - (columnsNumber + 1) * rowsNumber >= 0) {
+                    if (TwoDLimit - (columnsNumber + 1) * rowsNumber >= 0) {
                         array = AddColumn(array);
                         columnsNumber++;
                         arrayString = Print2DArray(array);
@@ -52,15 +56,16 @@ internal static class Program {
                 case 2:
                     showArray = !showArray;
                     break;
+                case 3:
+                    array = Create2DArray();
+                    break;
                 default:
                     isRunning = false;
                     break;
             }
         }
     }
-    private static void WorkWithJaggedArray() {
-        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, 20);
-        var array = FillJaggedArray(rowsNumber);
+    private static void WorkWithJaggedArray(ref int [][] array) {
         var arrayString = PrintJaggedArray(array);
         var isRunning = true;
         var option = 0;
@@ -74,6 +79,7 @@ internal static class Program {
                     if (array.Length == 0) {
                         isRunning = false;
                         Console.Clear();
+                        array = null;
                         Console.WriteLine("Вы массив удалили. Нажмите любую кнопку, чтобы отформатировать диск.");
                         Console.ReadKey();
                     }
@@ -109,19 +115,11 @@ internal static class Program {
             if (foundKeywords.ContainsKey(foundKeyword)) foundKeywords[foundKeyword]++;
         }
         
-        const string punctuation = "`~!@$%^&*()_+-=[]{}\\|/?><,.#;:'\"";
-        userInput = punctuation.Aggregate(userInput, (current, mark) => current.Replace(mark.ToString(), " " + mark + " "));
-        var splittedString = userInput.Split(' ');
-        var highlightsString = "";
-        foreach (var word in splittedString) {
-            if (keyWords.Contains(word)) highlightsString += $"#{word}# ";
-            else highlightsString += $"{word} ";
-        }
-        highlightsString = punctuation.Aggregate(highlightsString, (current, mark) => current.Replace(" " + mark + " ", mark.ToString()));
+        var highlightedString = Regex.Replace(userInput, pattern, "#$1#");
         Console.Clear();
         var highlight = false;
         var position = 0;
-        foreach (var symbol in highlightsString) {
+        foreach (var symbol in highlightedString) {
             if (symbol == '#' && !sharpPositions.Contains(position)) {
                 highlight = !highlight;
                 position--;
@@ -140,6 +138,8 @@ internal static class Program {
         foreach (var word in foundKeywords.Where(word => word.Value != 0)) Console.WriteLine($"{word.Key} — {word.Value}");
         Console.ReadKey();
     }
+    
+    
 
     #region Inputs
     private static int InputInt(string message) {
@@ -183,9 +183,7 @@ internal static class Program {
     }
     #endregion
     
-    
-    
-     private static int Menu(string[] options, int option = 0, string highlightedMessage = "", string arrayMessage = "") {
+    private static int Menu(string[] options, int option = 0, string highlightedMessage = "", string arrayMessage = "") {
         var work = true;
         var length = options.Length;
         var selectedOption = option >= 0 && option < length ? option : 0;
@@ -345,20 +343,24 @@ internal static class Program {
             Console.Clear();
         }
     }
-     
-    private static int[,] Fill2DArray(int rowsNumber, int columnsNumber, bool randomFilling) {
+
+    private static int[,] Create2DArray() {
+        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, 20);
+        var columnsNumber = InputWithLimit("Введите количество столбцов: ", 1, TwoDLimit / rowsNumber); 
+        var randomFilling = Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1;
+        return Create2DArray(rowsNumber, columnsNumber, randomFilling);
+    }
+    
+    private static int[,] Create2DArray(int rowsNumber, int columnsNumber, bool randomFilling) {
         var length = columnsNumber * rowsNumber;
         var array = new int[rowsNumber, columnsNumber];
         if (randomFilling) {
             var minValue = InputInt("Введите нижнюю границу: ");
             var maxValue = InputWithLimit("Введите верхнюю границу: ", minValue);
-            //var fillArrayBar = new LoadBar("Заполнение массива.", 0, length - 1);
             var random = new Random();
 
-            for (var i = 0; i < length; i++) {
+            for (var i = 0; i < length; i++)
                 array[i / columnsNumber, i % columnsNumber] = random.Next(minValue, maxValue);
-                //fillArrayBar.RenewIteration(i);
-            }
             
         }
         else {
@@ -382,13 +384,18 @@ internal static class Program {
         return arrayString;
     }
 
-    private static int[][] FillJaggedArray(int rowsNumber) {
+    private static int[][] CreateJaggedArray() {
+        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, RowsLimit);
         var array = new int [rowsNumber][];
-        var randomFilling = Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]);
-        var minValue = InputInt("Введите нижнюю границу: ");
-        var maxValue = InputWithLimit("Введите верхнюю границу: ", minValue);
+        var randomFilling = Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1;
+        var minValue = 1;
+        var maxValue = 1;
+        if (randomFilling) {
+            minValue = InputInt("Введите нижнюю границу: ");
+            maxValue = InputWithLimit("Введите верхнюю границу: ", minValue);
+        }
         for (var i = 0; i < rowsNumber; i++)
-            array[i] = FillArray(InputWithLimit("Введите длину строки: ", 1, 50), randomFilling == 1, minValue, maxValue);
+            array[i] = FillArray(InputWithLimit("Введите длину строки: ", 1, ColumnsLimit), randomFilling, minValue, maxValue);
         return array;
     }
     
@@ -418,7 +425,7 @@ internal static class Program {
     }
 
     private static int[,] AddColumn(int[,] array) {
-        var tempArray = Fill2DArray(array.GetLength(0), 1, Menu (["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1);
+        var tempArray = Create2DArray(array.GetLength(0), 1, Menu (["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1);
         var finalArray = new int[array.GetLength(0), array.GetLength(1) + 1];
         for (var i = 0; i < array.GetLength(0); i++) finalArray[i, 0] = tempArray[i, 0];
         for (var i = 0; i < array.Length; i++)
@@ -473,4 +480,3 @@ internal static class Program {
         return newArray;
     }
 }
-
