@@ -4,14 +4,14 @@ namespace Lab5;
 
 internal static class Program {
     private const int TwoDLimit = 500;
-    private const int RowsLimit = 20;
-    private const int ColumnsLimit = 50;
+    private const int JaggedArrayRowsLimit = 20;
+    private const int JaggedArrayColumnsLimit = 50;
     private static void Main() {
         Console.CursorVisible = false;
         var isRunning = true;
         var option = 0;
-        int[,] twoDArray = null;
-        int[][] jaggedArray = null;
+        int[,]? twoDArray = null;
+        int[][]? jaggedArray = null;
         while (isRunning) {
             option = Menu(["Выход", "Работа с двумерным массивом", "Работа с рванным массивом", "Работа со строкой"], option);
             switch (option) {
@@ -58,6 +58,10 @@ internal static class Program {
                     break;
                 case 3:
                     array = Create2DArray();
+                    rowsNumber = array.GetLength(0);
+                    columnsNumber = array.GetLength(1);
+                    arrayString = Print2DArray(array);
+                    highlightedMessage = "Массив пересоздан";
                     break;
                 default:
                     isRunning = false;
@@ -65,7 +69,7 @@ internal static class Program {
             }
         }
     }
-    private static void WorkWithJaggedArray(ref int [][] array) {
+    private static void WorkWithJaggedArray(ref int [][]? array) {
         var arrayString = PrintJaggedArray(array);
         var isRunning = true;
         var option = 0;
@@ -98,7 +102,28 @@ internal static class Program {
         const string keywordsString = "abstract\nas\nbase\nbool\nbreak\nbyte\ncase\ncatch\nchar\nchecked\nclass\nconst\ncontinue\ndecimal\ndefault\ndelegate\ndo\ndouble\nelse\nenum\nevent\nexplicit\nextern\nfalse\nfinally\nfixed\nfloat\nfor\nforeach\ngoto\nif\nimplicit\nin\nint\ninterface\ninternal\nis\nlock\nlong\nnamespace\nnew\nnull\nobject\noperator\nout\noverride\nparams\nprivate\nprotected\npublic\nreadonly\nref\nreturn\nsbyte\nsealed\nshort\nsizeof\nstackalloc\nstatic\nstring\nstruct\nswitch\nthis\nthrow\ntrue\ntry\ntypeof\nuint\nulong\nunchecked\nunsafe\nushort\nusing\nvirtual\nvoid\nvolatile\nwhile\nadd\nand\nalias\nascending\nargs\nasync\nawait\nby\ndescending\ndynamic\nequals\nfrom\nget\nglobal\ngroup\ninit\ninto\njoin\nlet\nmanaged\nnameof\nnint\nnot\nnotnull\nnuint\non\norderby\npartial\npartial\nrecord\nremove\nselect\nset\nunmanaged\nunmanaged\nvalue\nvar\nwhen\nwhere\nwhere\nwith\nyield";
         var pattern = @"\b(" + keywordsString.Replace('\n', '|') + @")\b";
         var keyWords = keywordsString.Split('\n');
-        var userInput = InputString("Введите строку для поиска ключевых слов: ");
+        string[] examples = ["static void PrintUpper string info12346: WriteLine ToUpper info, 1234info. if x>0 then sign=1; else if x<0 sign=-1; else sign=0.",
+            "private int a = 0; Info = 23. &^%$5int^ void&(",
+            "#abstract^& public^int void Int"];
+        string userInput;
+        switch (Menu(["Ввести строку", "Пример 1", "Пример 2", "Пример 3"])) {
+            case 1:
+                userInput = examples[0];
+                Console.WriteLine(userInput);
+                break;
+            case 2:
+                userInput = examples[1];
+                Console.WriteLine(userInput);
+                break;
+            case 3:
+                userInput = examples[2];
+                Console.WriteLine(userInput);
+                break;
+            default:
+                userInput = InputString("Введите строку для поиска ключевых слов, не вводите ничего, чтобы вернуться в меню:");
+                break;
+        }
+        if (IsStringEmpty(userInput)) return;
         List<int> sharpPositions = [];
         
         for (var i = 0; i < userInput.Length; i++) {
@@ -106,6 +131,17 @@ internal static class Program {
         }
 
         var matches = Regex.Matches(userInput, pattern);
+
+        if (matches.Count == 0) {
+            Console.WriteLine("Ключевых слов не найдено.\nНажмите любую кнопку, чтобы вернуться в меню...");
+            Console.ReadKey();
+            return;
+        }
+        var currentLineCursor = Console.CursorTop - 1;
+        Console.SetCursorPosition(0, Console.CursorTop);
+        Console.Write(new string(' ', Console.WindowWidth)); 
+        Console.SetCursorPosition(0, currentLineCursor);
+        
         var foundKeywords = new Dictionary<string, int>();
         
         foreach (var keyword in keyWords) foundKeywords[keyword] = 0;
@@ -116,7 +152,6 @@ internal static class Program {
         }
         
         var highlightedString = Regex.Replace(userInput, pattern, "#$1#");
-        Console.Clear();
         var highlight = false;
         var position = 0;
         foreach (var symbol in highlightedString) {
@@ -135,11 +170,16 @@ internal static class Program {
         }
         Console.ResetColor();
         Console.WriteLine();
-        foreach (var word in foundKeywords.Where(word => word.Value != 0)) Console.WriteLine($"{word.Key} — {word.Value}");
+        foreach (var word in foundKeywords.Where(word => word.Value != 0)) 
+            Console.WriteLine($"{word.Key} — {word.Value}");
+        Console.WriteLine("Нажмите любую кнопку, чтобы вернуться в меню...");
         Console.ReadKey();
     }
-    
-    
+
+    private static bool IsStringEmpty(string str) {
+        while (str.Contains("  ")) str = str.Replace("  ", " ");
+        return str is "" or " ";
+    }
 
     #region Inputs
     private static int InputInt(string message) {
@@ -171,11 +211,8 @@ internal static class Program {
         Console.WriteLine(message);
         Console.CursorVisible = true;
 
-        do {
-            input = Console.ReadLine();
-            if (input is "" or " ") Console.Write("Ошибка!!! Введите не пустую строку.\n");
-            while (input.Contains("  ")) input = input.Replace("  ", " ");
-        } while (input is "" or " ");
+        input = Console.ReadLine();
+        if (input is "" or " ") Console.Write("Ошибка!!! Введите не пустую строку.\n");
 
         Console.CursorVisible = false;
 
@@ -320,6 +357,7 @@ internal static class Program {
                     if (row1 == row) row1 = -1;
                     else if (row2 == row) row2 = -1;
                     else if (row1 == -1) row1 = row;
+                    else if (row1 > row) row1 = row;
                     else row2 = row;
                     if (row1 > row2) (row1, row2) = (row2, row1);
                     break;
@@ -385,7 +423,7 @@ internal static class Program {
     }
 
     private static int[][] CreateJaggedArray() {
-        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, RowsLimit);
+        var rowsNumber = InputWithLimit("Введите количество строк: ", 1, JaggedArrayRowsLimit);
         var array = new int [rowsNumber][];
         var randomFilling = Menu(["Ввести элементы вручную", "Сгенерировать случайные числа"]) == 1;
         var minValue = 1;
@@ -395,7 +433,7 @@ internal static class Program {
             maxValue = InputWithLimit("Введите верхнюю границу: ", minValue);
         }
         for (var i = 0; i < rowsNumber; i++)
-            array[i] = FillArray(InputWithLimit("Введите длину строки: ", 1, ColumnsLimit), randomFilling, minValue, maxValue);
+            array[i] = FillArray(InputWithLimit("Введите длину строки: ", 1, JaggedArrayColumnsLimit), randomFilling, minValue, maxValue);
         return array;
     }
     
